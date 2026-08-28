@@ -66,7 +66,7 @@ class TestWhatsAppMessenger:
 
         # 1. Assert intro text was sent and browser kept open
         mock_sendwhatmsg.assert_called_once_with(
-            phone_no="+34627463091", message="🎤 Sending a voice note...", wait_time=10, tab_close=False
+            phone_no="+34627463091", message="Sending a voice note...", wait_time=10, tab_close=False
         )
 
         # 2. Assert clipboard copy was triggered
