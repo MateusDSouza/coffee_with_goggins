@@ -58,3 +58,5 @@ contacts.json
 *.db
 *.mp3
 output_audio
+*.log
+PyWhatKit_DB.txt
