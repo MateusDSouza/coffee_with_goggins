@@ -1,0 +1,49 @@
+[project]
+name = "agent-whatsapp"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "google-genai>=2.20.0",
+    "neonize>=0.4.3.post0",
+    "ollama>=0.6.2",
+    "pytest>=9.1.1",
+    "python-dotenv>=1.2.3",
+    "pywhatkit>=5.4",
+    "schedule>=1.2.2",
+    "sqlmodel>=0.0.39",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.5",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError"
+]
+
+[tool.mypy]
+python_version = "3.13.5"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]

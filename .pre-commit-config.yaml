@@ -1,0 +1,36 @@
+# .pre-commit-config.yaml
+repos:
+  # Standard file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+
+  # Extremely fast Python linting and formatting via Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.2
+    hooks:
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format
+
+  # Local hooks tied to the uv environment for types and coverage
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (type checking)
+        entry: uv run mypy src/ tests/
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pytest-coverage
+        name: pytest (unit tests & coverage)
+        # Enforces a minimum 90% coverage rule to pass the commit
+        entry: uv run pytest --cov=src --cov-fail-under=90
+        language: system
+        types: [python]
+        pass_filenames: false

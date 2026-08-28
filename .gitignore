@@ -1,0 +1,56 @@
+# ==========================================
+# Secrets and Environment Variables
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# uv / Virtual Environments
+# ==========================================
+# uv defaults to creating a `.venv` folder
+.venv/
+venv/
+env/
+
+# ==========================================
+# Python Byte-compiled / Optimized files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================================
+# Distribution / Packaging
+# ==========================================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ==========================================
+# Testing / Coverage
+# ==========================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ==========================================
+# IDEs / Editors
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+Thumbs.db
