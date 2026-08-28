@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Import the main function directly
 from src.main import main
 
 
@@ -40,6 +39,10 @@ class TestMainCompositionRoot:
                 return "fake_voice_id"
             elif key == "FISH_AUDIO_MODEL":
                 return "s2.1-pro-free"
+            elif key == "OLLAMA_HOST":
+                return "http://localhost:11434"
+            elif key == "OLLAMA_MODEL":
+                return "dolphin-llama3"
             return default
 
         mock_getenv.side_effect = mock_env_vars
@@ -56,7 +59,11 @@ class TestMainCompositionRoot:
 
         # Assert - Verify all dependencies were constructed correctly
         mock_prompt_loader.assert_called_once()
-        mock_ollama.assert_called_once_with(prompt_config=mock_prompt_config)
+        mock_ollama.assert_called_once_with(
+            prompt_config=mock_prompt_config,
+            host="http://localhost:11434",
+            model_name="dolphin-llama3",
+        )
         mock_tts.assert_called_once_with(api_key="fake_api_key", voice_id="fake_voice_id", model="s2.1-pro-free")
         mock_db.assert_called_once()
         mock_messenger.assert_called_once()

@@ -12,7 +12,10 @@ class OllamaClient(ILLMClient):
     """An LLM client strictly responsible for API communication."""
 
     def __init__(
-        self, prompt_config: PromptConfig, host: str = "http://localhost:11434", model_name: str = "dolphin-llama3"
+        self,
+        prompt_config: PromptConfig,
+        host: str,
+        model_name: str,
     ) -> None:
         self.client = Client(host=host)
         self.model_name = model_name

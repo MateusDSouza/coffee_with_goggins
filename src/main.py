@@ -36,6 +36,8 @@ def main() -> None:
     logger.info("Booting up Goggins Agent")
 
     # 2. Safely retrieve the required secrets
+    ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    ollama_model = os.getenv("OLLAMA_MODEL", "dolphin-llama3")
     fish_api_key = os.getenv("FISH_AUDIO_API_KEY")
     fish_voice_id = os.getenv("FISH_AUDIO_VOICE_ID")
     fish_model = os.getenv("FISH_AUDIO_MODEL", "s2.1-pro-free")
@@ -50,7 +52,7 @@ def main() -> None:
 
     # 4. Initialize dependencies
     logger.debug("Initializing infrastructure dependencies")
-    llm_client = OllamaClient(prompt_config=prompt_config)
+    llm_client = OllamaClient(prompt_config=prompt_config, host=ollama_host, model_name=ollama_model)
     tts_client = FishAudioTTSClient(api_key=fish_api_key, voice_id=fish_voice_id, model=fish_model)
     db_repo = SQLiteMessageRepository()
     messenger = WhatsAppMessenger()

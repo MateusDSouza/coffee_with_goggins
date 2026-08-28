@@ -59,7 +59,7 @@ class TestOllamaClient:
         # Simulate a malformed response missing the 'content' key
         mock_client_instance.chat.return_value = {"message": {}}
 
-        client = OllamaClient(prompt_config=prompt_config)
+        client = OllamaClient(prompt_config=prompt_config, host="http://fake-host", model_name="test-model")
 
         # Act & Assert
         with pytest.raises(KeyError):
