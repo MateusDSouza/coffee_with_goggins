@@ -1,6 +1,9 @@
+import logging
 from pathlib import Path
 
 from src.models.prompt_config import PromptConfig
+
+logger = logging.getLogger(__name__)
 
 
 class MarkdownPromptLoader:
@@ -10,6 +13,7 @@ class MarkdownPromptLoader:
     def load(file_path: str | Path) -> PromptConfig:
         path = Path(file_path)
         if not path.exists():
+            logger.error(f"Prompt file not found: {path}")
             raise FileNotFoundError(f"Prompt file not found: {path}")
 
         system_text: list[str] = []
@@ -31,6 +35,8 @@ class MarkdownPromptLoader:
                     system_text.append(line)
                 elif current_section == "user":
                     user_text.append(line)
+
+        logger.debug(f"Successfully loaded prompt configuration from {path}")
 
         # Join the lines, stripping leading/trailing whitespace but preserving internal line breaks
         return PromptConfig(
