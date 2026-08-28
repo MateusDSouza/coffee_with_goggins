@@ -44,10 +44,12 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.13.5"
+python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+mypy_path = "."
+namespace_packages = true
 
 [tool.ruff]
 line-length = 120

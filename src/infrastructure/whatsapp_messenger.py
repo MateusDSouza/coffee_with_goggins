@@ -3,10 +3,8 @@ import subprocess
 import sys
 import time
 
-import pyautogui
+import pyautogui  # type: ignore
 import pywhatkit
-
-# Disable pywhatkit text logging
 import pywhatkit.core.log
 
 from src.interfaces.i_messenger_client import IMessengerClient
@@ -18,7 +16,7 @@ class WhatsAppMessenger(IMessengerClient):
     """Concrete implementation for sending messages and media via WhatsApp Web."""
 
     def send_message(self, phone_number: str, message: str) -> None:
-        pywhatkit.sendwhatmsg_instantly(
+        pywhatkit.sendwhatmsg_instantly(  # type: ignore[attr-defined]
             phone_no=phone_number, message=message, wait_time=8, tab_close=True, close_time=2
         )
 
@@ -32,8 +30,7 @@ class WhatsAppMessenger(IMessengerClient):
         print(f"🌐 Opening WhatsApp Web for audio to {phone_number}...")
 
         # 1. Open chat and send introductory text.
-        # We set tab_close=False because we need the browser to stay open for the file paste.
-        pywhatkit.sendwhatmsg_instantly(
+        pywhatkit.sendwhatmsg_instantly(  # type: ignore[attr-defined]
             phone_no=phone_number, message="🎤 Sending a voice note...", wait_time=10, tab_close=False
         )
 

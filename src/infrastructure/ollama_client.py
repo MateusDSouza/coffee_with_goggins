@@ -15,7 +15,6 @@ class OllamaClient(ILLMClient):
         self.prompt_config = prompt_config
 
     def generate_message(self, contact_name: str) -> str:
-        # Dynamically inject the contact name into the template
         user_prompt = self.prompt_config.user_prompt_template.format(contact_name=contact_name)
 
         response = self.client.chat(
