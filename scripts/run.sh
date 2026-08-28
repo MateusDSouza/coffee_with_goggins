@@ -30,4 +30,4 @@ fi
 
 # Run the agent
 echo "⚙️ Booting up HoLLyM Agent..."
-python app/main.py
+python src/main.py

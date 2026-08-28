@@ -54,3 +54,4 @@ htmlcov/
 # ==========================================
 .DS_Store
 Thumbs.db
+contacts.json
