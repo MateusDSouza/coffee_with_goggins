@@ -2,10 +2,10 @@ import time
 
 import schedule
 
-from interfaces.i_contact_repository import IContactRepository
-from interfaces.i_llm_client import ILLMClient
-from interfaces.i_message_repository import IMessageRepository
-from interfaces.i_messenger_client import IMessengerClient
+from src.interfaces.i_contact_repository import IContactRepository
+from src.interfaces.i_llm_client import ILLMClient
+from src.interfaces.i_message_repository import IMessageRepository
+from src.interfaces.i_messenger_client import IMessengerClient
 
 
 class MessagingJobService:
