@@ -54,7 +54,7 @@ htmlcov/
 # ==========================================
 .DS_Store
 Thumbs.db
-contacts.json
+*.json
 *.db
 *.mp3
 output_audio

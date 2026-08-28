@@ -44,14 +44,14 @@ class TestWhatsAppMessenger:
     @patch("src.infrastructure.whatsapp_messenger.time.sleep")
     @patch("src.infrastructure.whatsapp_messenger.WhatsAppMessenger._copy_file_to_clipboard")
     @patch("src.infrastructure.whatsapp_messenger.pyautogui")
-    @patch("src.infrastructure.whatsapp_messenger.pywhatkit.sendwhatmsg_instantly")
+    @patch("src.infrastructure.whatsapp_messenger.webbrowser.open")
     @patch("src.infrastructure.whatsapp_messenger.os.path.exists", return_value=True)
     @patch("src.infrastructure.whatsapp_messenger.os.path.abspath", return_value="/fake/audio.mp3")
     def test_send_audio_executes_gui_workflow_correctly(
         self,
         mock_abspath: MagicMock,
         mock_exists: MagicMock,
-        mock_sendwhatmsg: MagicMock,
+        mock_webbrowser: MagicMock,
         mock_pyautogui: MagicMock,
         mock_copy: MagicMock,
         mock_sleep: MagicMock,
@@ -65,10 +65,8 @@ class TestWhatsAppMessenger:
         with patch("src.infrastructure.whatsapp_messenger.sys.platform", platform):
             messenger.send_audio("+34627463091", "audio.mp3")
 
-        # 1. Assert intro text was sent and browser kept open
-        mock_sendwhatmsg.assert_called_once_with(
-            phone_no="+34627463091", message="Sending a voice note...", wait_time=10, tab_close=False
-        )
+        # 1. Assert direct chat link was opened without sending text
+        mock_webbrowser.assert_called_once_with("https://web.whatsapp.com/send?phone=34627463091")
 
         # 2. Assert clipboard copy was triggered
         mock_copy.assert_called_once_with("/fake/audio.mp3")
@@ -80,7 +78,7 @@ class TestWhatsAppMessenger:
         mock_pyautogui.press.assert_called_once_with("enter")
 
         # 4. Assert sleep was called to allow UI to catch up
-        assert mock_sleep.call_count == 3
+        assert mock_sleep.call_count == 4
 
     @patch("src.infrastructure.whatsapp_messenger.subprocess.run")
     def test_copy_file_to_clipboard_macos(self, mock_subprocess: MagicMock, messenger: WhatsAppMessenger) -> None:

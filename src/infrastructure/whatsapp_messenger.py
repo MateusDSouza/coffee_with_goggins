@@ -4,6 +4,7 @@ import subprocess
 import sys
 import textwrap
 import time
+import webbrowser  # Added standard library import
 
 import pyautogui  # type: ignore
 import pywhatkit
@@ -36,27 +37,30 @@ class WhatsAppMessenger(IMessengerClient):
 
         logger.info(f"Opening WhatsApp Web for audio dispatch to {phone_number}")
 
-        # 1. Open chat and send introductory text.
-        pywhatkit.sendwhatmsg_instantly(  # type: ignore[attr-defined]
-            phone_no=phone_number, message="Sending a voice note...", wait_time=10, tab_close=False
-        )
+        # 1. Open the direct WhatsApp Web chat link without sending text
+        clean_phone = phone_number.replace("+", "").strip()
+        chat_url = f"https://web.whatsapp.com/send?phone={clean_phone}"
+        webbrowser.open(chat_url)
 
-        # 2. Copy the file to the system clipboard
+        # 2. Wait for WhatsApp Web UI to load completely
+        time.sleep(10)
+
+        # 3. Copy the file to the system clipboard
         self._copy_file_to_clipboard(abs_path)
 
-        # 3. Ensure the browser text box is focused, then paste
+        # 4. Paste the file directly into the chat
         time.sleep(1)
         if sys.platform == "darwin":
             pyautogui.hotkey("command", "v")  # macOS paste
         else:
             pyautogui.hotkey("ctrl", "v")  # Windows/Linux paste
 
-        # 4. Wait for the WhatsApp Web media preview to load, then send
+        # 5. Wait for media preview, then send
         time.sleep(2)
         pyautogui.press("enter")
         logger.info(f"Audio file {audio_file_path} dispatched to {phone_number}")
 
-        # 5. Clean up by closing the browser tab
+        # 6. Clean up by closing the browser tab
         time.sleep(2)
         if sys.platform == "darwin":
             pyautogui.hotkey("command", "w")

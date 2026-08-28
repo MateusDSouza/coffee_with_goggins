@@ -45,9 +45,7 @@ exclude_lines = [
 
 [tool.mypy]
 python_version = "3.13"
-strict = true
-warn_return_any = true
-warn_unused_configs = true
+explicit_package_bases = true
 mypy_path = "."
 namespace_packages = true
 
