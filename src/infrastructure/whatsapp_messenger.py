@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 import sys
+import textwrap
 import time
 
 import pyautogui  # type: ignore
@@ -66,11 +67,20 @@ class WhatsAppMessenger(IMessengerClient):
         """Cross-platform method to copy a physical file into the system clipboard."""
         logger.debug(f"Copying file {file_path} to system clipboard on platform: {sys.platform}")
         if sys.platform == "darwin":
-            # macOS: Use AppleScript to copy the file reference
-            script = f'set the clipboard to POSIX file "{file_path}"'
-            subprocess.run(["osascript", "-e", script], check=True)
+            swift_script = textwrap.dedent(
+                f"""\
+                use framework "AppKit"
+                use scripting additions
+
+                set thePath to "{file_path}"
+                set theURL to current application's NSURL's fileURLWithPath:thePath
+                set theBoard to current application's NSPasteboard's generalPasteboard()
+                theBoard's clearContents()
+                theBoard's writeObjects:{{theURL}}
+                """
+            )
+            subprocess.run(["osascript", "-e", swift_script], check=True)
         elif sys.platform == "win32":
-            # Windows: Use PowerShell to copy the file
             subprocess.run(["powershell", "-command", f'Set-Clipboard -Path "{file_path}"'], check=True)
         else:
             logger.error(f"Clipboard file copying not supported on platform: {sys.platform}")

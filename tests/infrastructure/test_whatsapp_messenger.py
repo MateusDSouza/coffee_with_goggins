@@ -1,3 +1,4 @@
+import textwrap
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -84,12 +85,23 @@ class TestWhatsAppMessenger:
     @patch("src.infrastructure.whatsapp_messenger.subprocess.run")
     def test_copy_file_to_clipboard_macos(self, mock_subprocess: MagicMock, messenger: WhatsAppMessenger) -> None:
         """Verifies AppleScript is utilized for macOS clipboards."""
+        expected_script = textwrap.dedent(
+            """\
+			use framework "AppKit"
+			use scripting additions
+
+			set thePath to "/fake/file.mp3"
+			set theURL to current application's NSURL's fileURLWithPath:thePath
+			set theBoard to current application's NSPasteboard's generalPasteboard()
+			theBoard's clearContents()
+			theBoard's writeObjects:{theURL}
+			"""
+        )
+
         with patch("src.infrastructure.whatsapp_messenger.sys.platform", "darwin"):
             messenger._copy_file_to_clipboard("/fake/file.mp3")
 
-        mock_subprocess.assert_called_once_with(
-            ["osascript", "-e", 'set the clipboard to POSIX file "/fake/file.mp3"'], check=True
-        )
+        mock_subprocess.assert_called_once_with(["osascript", "-e", expected_script], check=True)
 
     @patch("src.infrastructure.whatsapp_messenger.subprocess.run")
     def test_copy_file_to_clipboard_windows(self, mock_subprocess: MagicMock, messenger: WhatsAppMessenger) -> None:
