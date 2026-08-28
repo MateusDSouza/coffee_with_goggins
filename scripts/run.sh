@@ -29,5 +29,5 @@ if [ -d ".venv" ]; then
 fi
 
 # Run the agent
-echo "⚙️ Booting up HoLLyM Agent..."
+echo "⚙️ Booting up Goggins Agent..."
 python src/main.py

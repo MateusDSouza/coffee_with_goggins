@@ -1,27 +1,47 @@
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+from src.infrastructure.fish_audio_client import FishAudioTTSClient  # Added from previous step
 from src.infrastructure.json_contact_repository import JSONContactRepository
 from src.infrastructure.markdown_prompt_loader import MarkdownPromptLoader
 from src.infrastructure.ollama_client import OllamaClient
 from src.infrastructure.sqlite_message_repository import SQLiteMessageRepository
 from src.infrastructure.whatsapp_messenger import WhatsAppMessenger
-from src.services import MessagingJobService
+from src.services.messaging_job_service import MessagingJobService
 
 
 def main() -> None:
-    print("⚙️ Booting up HoLLyM Agent...")
+    # 1. Inject environment variables from .env into the system environment
+    load_dotenv()
 
-    prompt_file_path = Path(__file__).parent.parent / "prompts" / "hollym.md"
+    print("⚙️ Booting up Goggins Agent...")
+
+    # 2. Safely retrieve the required secrets
+    fish_api_key = os.getenv("FISH_AUDIO_API_KEY")
+    fish_voice_id = os.getenv("FISH_AUDIO_VOICE_ID")
+    fish_model = os.getenv("FISH_AUDIO_MODEL", "s2.1-pro-free")
+    if not fish_api_key:
+        raise ValueError("Critical Error: FISH_AUDIO_API_KEY is missing from the environment.")
+
+    # 3. Load configurations
+    prompt_file_path = Path(__file__).parent.parent / "prompts" / "goggins_agent.md"
     prompt_config = MarkdownPromptLoader.load(prompt_file_path)
 
+    # 4. Initialize dependencies
     llm_client = OllamaClient(prompt_config=prompt_config)
+    tts_client = FishAudioTTSClient(api_key=fish_api_key, voice_id=fish_voice_id, model=fish_model)
     db_repo = SQLiteMessageRepository()
     messenger = WhatsAppMessenger()
     contact_repo = JSONContactRepository(file_path="contacts.json")
 
-    bot_service = MessagingJobService(llm=llm_client, messenger=messenger, repo=db_repo, contact_repo=contact_repo)
+    # 5. Wire the application
+    bot_service = MessagingJobService(
+        llm=llm_client, tts=tts_client, messenger=messenger, repo=db_repo, contact_repo=contact_repo
+    )
 
-    bot_service.start_scheduler(interval_minutes=2)
+    bot_service.run_once()
 
 
 if __name__ == "__main__":

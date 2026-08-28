@@ -55,3 +55,6 @@ htmlcov/
 .DS_Store
 Thumbs.db
 contacts.json
+*.db
+*.mp3
+output_audio

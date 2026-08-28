@@ -13,9 +13,11 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "ollama" },
+    { name = "pyautogui" },
     { name = "pytest" },
     { name = "python-dotenv" },
     { name = "pywhatkit" },
+    { name = "requests" },
     { name = "schedule" },
     { name = "sqlmodel" },
 ]
@@ -32,9 +34,11 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ollama", specifier = ">=0.6.2" },
+    { name = "pyautogui", specifier = ">=0.9.54" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "pywhatkit", specifier = ">=5.4" },
+    { name = "requests", specifier = ">=2.34.2" },
     { name = "schedule", specifier = ">=1.2.2" },
     { name = "sqlmodel", specifier = ">=0.0.39" },
 ]
