@@ -46,7 +46,7 @@ def main() -> None:
         raise ValueError("Critical Error: FISH_AUDIO_API_KEY is missing from the environment.")
 
     # 3. Load configurations
-    prompt_file_path = Path(__file__).parent.parent / "prompts" / "goggins_agent.md"
+    prompt_file_path = Path(__file__).parent.parent / "prompts" / "goggins_agent_2.md"
     logger.debug(f"Loading prompt configuration from {prompt_file_path}")
     prompt_config = MarkdownPromptLoader.load(prompt_file_path)
 
