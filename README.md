@@ -1,4 +1,5 @@
 # Coffee with Goggins ☕🔥
+![Image Alt Text](assets/coffee_with_goggins_banner.png)
 
 An automated WhatsApp bot built with Python, local LLMs (Ollama), and TTS synthesis (Fish Audio) that generates personalized, high-intensity motivational voice messages for your contacts.
 
