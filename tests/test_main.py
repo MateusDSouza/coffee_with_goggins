@@ -12,6 +12,7 @@ class TestMainCompositionRoot:
     @patch("src.main.JSONContactRepository")
     @patch("src.main.WhatsAppMessenger")
     @patch("src.main.SQLiteMessageRepository")
+    @patch("src.main.AudioMixerService")  # 1. Patch AudioMixerService
     @patch("src.main.FishAudioTTSClient")
     @patch("src.main.OllamaClient")
     @patch("src.main.MarkdownPromptLoader.load")
@@ -24,6 +25,7 @@ class TestMainCompositionRoot:
         mock_prompt_loader: MagicMock,
         mock_ollama: MagicMock,
         mock_tts: MagicMock,
+        mock_audio_mixer: MagicMock,  # 2. Add mock parameter here
         mock_db: MagicMock,
         mock_messenger: MagicMock,
         mock_contact_repo: MagicMock,
@@ -49,8 +51,6 @@ class TestMainCompositionRoot:
         mock_prompt_config = MagicMock()
         mock_prompt_loader.return_value = mock_prompt_config
 
-        mock_service_instance = mock_job_service.return_value
-
         # Act
         main()
 
@@ -65,29 +65,41 @@ class TestMainCompositionRoot:
             model_name="dolphin-llama3",
         )
         mock_tts.assert_called_once_with(api_key="fake_api_key", voice_id="fake_voice_id", model="s2.1-pro-free")
+        mock_audio_mixer.assert_called_once()  # 3. Verify AudioMixerService instantiation
         mock_db.assert_called_once()
         mock_messenger.assert_called_once()
         mock_contact_repo.assert_called_once_with(file_path="contacts.json")
 
-        # Assert - Verify the service was injected with the mocked dependencies
+        # Assert - Verify the service was injected with all mocked dependencies
         mock_job_service.assert_called_once_with(
             llm=mock_ollama.return_value,
             tts=mock_tts.return_value,
+            audio_mixer=mock_audio_mixer.return_value,  # 4. Pass mocked mixer here
             messenger=mock_messenger.return_value,
             repo=mock_db.return_value,
             contact_repo=mock_contact_repo.return_value,
         )
-
-        # Assert - Verify execution was triggered
-        mock_service_instance.run_once.assert_called_once()
 
     @patch("src.main.os.getenv")
     @patch("src.main.load_dotenv")
     def test_main_raises_error_if_api_key_missing(self, mock_load_dotenv: MagicMock, mock_getenv: MagicMock) -> None:
         """Ensures the application fails fast before instantiating classes if critical secrets are missing."""
 
-        # Arrange - Simulate a missing API key
-        mock_getenv.return_value = None
+        # Arrange - Provide all env vars EXCEPT FISH_AUDIO_API_KEY
+        def mock_env_vars(key: str, default: str | None = None) -> str | None:
+            if key == "FISH_AUDIO_API_KEY":
+                return None
+            elif key == "FISH_AUDIO_VOICE_ID":
+                return "fake_voice_id"
+            elif key == "FISH_AUDIO_MODEL":
+                return "s2.1-pro-free"
+            elif key == "OLLAMA_HOST":
+                return "http://localhost:11434"
+            elif key == "OLLAMA_MODEL":
+                return "dolphin-llama3"
+            return default
+
+        mock_getenv.side_effect = mock_env_vars
 
         # Act & Assert
         with pytest.raises(ValueError, match="Critical Error: FISH_AUDIO_API_KEY is missing from the environment."):

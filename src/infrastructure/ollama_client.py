@@ -34,6 +34,10 @@ class OllamaClient(ILLMClient):
                 {"role": "system", "content": self.prompt_config.system_instruction},
                 {"role": "user", "content": user_prompt},
             ],
+            options={
+                "temperature": 0.8,
+                "top_p": 0.9,
+            },
         )
 
         logger.debug(f"Successfully received LLM response for {contact_name}")

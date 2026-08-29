@@ -15,6 +15,7 @@ class TestMessagingJobService:
         return {
             "llm": MagicMock(),
             "tts": MagicMock(),
+            "audio_mixer": MagicMock(),
             "messenger": MagicMock(),
             "repo": MagicMock(),
             "contact_repo": MagicMock(),
@@ -29,6 +30,7 @@ class TestMessagingJobService:
         ]
         mock_dependencies["llm"].generate_message.return_value = "Hello from AI!"
         mock_dependencies["tts"].generate_audio.return_value = "/tmp/audio.mp3"
+        mock_dependencies["audio_mixer"].mix_with_random_background.return_value = "/tmp/mixed_audio.mp3"
 
         return MessagingJobService(**mock_dependencies)
 
@@ -36,7 +38,7 @@ class TestMessagingJobService:
     def test_run_job_happy_path_sends_audio(
         self, mock_sleep: MagicMock, mock_dependencies: dict[str, MagicMock], service: MessagingJobService
     ) -> None:
-        """Verifies the primary workflow where text generation, TTS, and sending all succeed."""
+        """Verifies the primary workflow where text generation, TTS, mixing, and sending all succeed."""
 
         # Act
         service.run_job()
@@ -44,14 +46,33 @@ class TestMessagingJobService:
         # Assert against the mock_dependencies dictionary to satisfy Mypy
         mock_dependencies["llm"].generate_message.assert_called_once_with("Maksin")
         mock_dependencies["tts"].generate_audio.assert_called_once_with("Hello from AI!", "Maksin")
-        mock_dependencies["messenger"].send_audio.assert_called_once_with("+34627463091", "/tmp/audio.mp3")
+        mock_dependencies["audio_mixer"].mix_with_random_background.assert_called_once_with("/tmp/audio.mp3")
+        mock_dependencies["messenger"].send_audio.assert_called_once_with("+34627463091", "/tmp/mixed_audio.mp3")
 
         mock_dependencies["messenger"].send_message.assert_not_called()
 
         mock_dependencies["repo"].log_message.assert_called_once_with(
-            "Maksin", "+34627463091", "AUDIO: /tmp/audio.mp3", "SENT"
+            "Maksin", "+34627463091", "Hello from AI!", "SENT"
         )
         mock_sleep.assert_called_once_with(3)
+
+    @patch("src.services.messaging_job_service.time.sleep")
+    def test_run_job_audio_mixing_fails_sends_unmixed_voice_audio(
+        self, mock_sleep: MagicMock, mock_dependencies: dict[str, MagicMock], service: MessagingJobService
+    ) -> None:
+        """Verifies that if mixing fails, it logs a warning and dispatches unmixed raw audio."""
+
+        # Arrange
+        mock_dependencies["audio_mixer"].mix_with_random_background.side_effect = Exception("FFmpeg missing")
+
+        # Act
+        service.run_job()
+
+        # Assert
+        mock_dependencies["messenger"].send_audio.assert_called_once_with("+34627463091", "/tmp/audio.mp3")
+        mock_dependencies["repo"].log_message.assert_called_once_with(
+            "Maksin", "+34627463091", "Hello from AI!", "SENT"
+        )
 
     @patch("src.services.messaging_job_service.time.sleep")
     def test_run_job_tts_fails_falls_back_to_text(
@@ -66,6 +87,7 @@ class TestMessagingJobService:
         service.run_job()
 
         # Assert
+        mock_dependencies["audio_mixer"].mix_with_random_background.assert_not_called()
         mock_dependencies["messenger"].send_audio.assert_not_called()
         mock_dependencies["messenger"].send_message.assert_called_once_with("+34627463091", "Hello from AI!")
         mock_dependencies["repo"].log_message.assert_called_once_with(

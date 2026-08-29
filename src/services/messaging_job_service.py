@@ -3,6 +3,7 @@ import time
 
 import schedule
 
+from src.interfaces.i_audio_mixer import IAudioMixer
 from src.interfaces.i_contact_repository import IContactRepository
 from src.interfaces.i_llm_client import ILLMClient
 from src.interfaces.i_message_repository import IMessageRepository
@@ -19,46 +20,84 @@ class MessagingJobService:
         self,
         llm: ILLMClient,
         tts: ITextToSpeechClient,
+        audio_mixer: IAudioMixer,
         messenger: IMessengerClient,
         repo: IMessageRepository,
         contact_repo: IContactRepository,
     ) -> None:
         self.llm = llm
         self.tts = tts
+        self.audio_mixer = audio_mixer
         self.messenger = messenger
         self.repo = repo
         self.contact_repo = contact_repo
 
     def run_job(self) -> None:
         logger.info("Starting messaging job")
-        contacts = self.contact_repo.get_contacts()
+
+        try:
+            contacts = self.contact_repo.get_contacts()
+        except Exception as repo_err:
+            logger.error(f"Failed to fetch contacts from repository: {repo_err}", exc_info=True)
+            return
 
         for contact in contacts:
-            logger.info(f"Generating text for contact: {contact.name}")
-            text_message = self.llm.generate_message(contact.name)
+            text_message: str | None = None
 
-            logger.info(f"Attempting audio conversion via TTS for contact: {contact.name}")
+            # 1. Generate text script via LLM
             try:
-                # 1. Try to generate and send audio
-                audio_path = self.tts.generate_audio(text_message, contact.name)
-                self.messenger.send_audio(contact.phone_number, audio_path)
-                self.repo.log_message(contact.name, contact.phone_number, f"AUDIO: {audio_path}", "SENT")
-                logger.info(f"Saved audio message record to database for {contact.name}")
+                logger.info(f"Generating text for contact: {contact.name}")
+                text_message = self.llm.generate_message(contact.name)
+            except Exception as llm_err:
+                logger.error(f"LLM text generation failed for contact {contact.name}: {llm_err}", exc_info=True)
+                continue
 
-            except Exception as tts_error:
-                # 2. If audio fails, fallback to plain text
-                logger.error(f"Audio generation failed for {contact.name}: {tts_error}", exc_info=True)
+            # 2. Process audio workflow (TTS + Audio Mixing + WhatsApp Dispatch)
+            audio_sent = False
+            try:
+                logger.info(f"Attempting audio conversion via TTS for contact: {contact.name}")
+                raw_audio_path = self.tts.generate_audio(text_message, contact.name)
+
+                # Mix raw voice note with a random background track
+                mixed_audio_path = raw_audio_path
+                try:
+                    logger.info(f"Mixing background music for contact: {contact.name}")
+                    mixed_audio_path = self.audio_mixer.mix_with_random_background(raw_audio_path)
+                except Exception as mixer_err:
+                    logger.warning(
+                        f"Audio mixing failed for {contact.name}: {mixer_err}. Falling back to unmixed voice track.",
+                        exc_info=True,
+                    )
+
+                logger.info(f"Dispatching voice message to contact: {contact.name}")
+                self.messenger.send_audio(contact.phone_number, mixed_audio_path)
+                audio_sent = True
+
+                # Log successful audio dispatch
+                try:
+                    self.repo.log_message(contact.name, contact.phone_number, text_message, "SENT")
+                    logger.info(f"Saved audio message record to database for {contact.name}")
+                except Exception as db_err:
+                    logger.error(f"Failed to log SENT status to database for {contact.name}: {db_err}", exc_info=True)
+
+            except Exception as audio_workflow_err:
+                logger.error(f"Audio dispatch workflow failed for {contact.name}: {audio_workflow_err}", exc_info=True)
+
+            # 3. Fallback to standard text message if audio dispatch failed
+            if not audio_sent:
                 logger.warning(f"Falling back to standard text message for {contact.name}")
-
                 try:
                     self.messenger.send_message(contact.phone_number, text_message)
                     self.repo.log_message(contact.name, contact.phone_number, text_message, "SENT_TEXT_FALLBACK")
                     logger.info(f"Saved fallback text record to database for {contact.name}")
-                except Exception as messenger_error:
-                    logger.error(
-                        f"Fatal error sending text fallback for {contact.name}: {messenger_error}", exc_info=True
-                    )
-                    self.repo.log_message(contact.name, contact.phone_number, text_message, "FAILED")
+                except Exception as fallback_err:
+                    logger.error(f"Fatal error sending text fallback for {contact.name}: {fallback_err}", exc_info=True)
+                    try:
+                        self.repo.log_message(contact.name, contact.phone_number, text_message, "FAILED")
+                    except Exception as db_err:
+                        logger.error(
+                            f"Failed to log FAILED status to database for {contact.name}: {db_err}", exc_info=True
+                        )
 
             time.sleep(3)
 

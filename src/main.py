@@ -4,6 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from src.infrastructure.audio_mixer_service import AudioMixerService
 from src.infrastructure.fish_audio_client import FishAudioTTSClient
 from src.infrastructure.json_contact_repository import JSONContactRepository
 from src.infrastructure.markdown_prompt_loader import MarkdownPromptLoader
@@ -36,8 +37,12 @@ def main() -> None:
     logger.info("Booting up Goggins Agent")
 
     # 2. Safely retrieve the required secrets
-    ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-    ollama_model = os.getenv("OLLAMA_MODEL", "dolphin-llama3")
+    ollama_host = os.getenv("OLLAMA_HOST")
+    ollama_model = os.getenv("OLLAMA_MODEL")
+
+    if not ollama_host or not ollama_model:
+        raise ValueError("OLLAMA_HOST and OLLAMA_MODEL environment variables must be set.")
+
     fish_api_key = os.getenv("FISH_AUDIO_API_KEY")
     fish_voice_id = os.getenv("FISH_AUDIO_VOICE_ID")
     fish_model = os.getenv("FISH_AUDIO_MODEL", "s2.1-pro-free")
@@ -46,7 +51,7 @@ def main() -> None:
         raise ValueError("Critical Error: FISH_AUDIO_API_KEY is missing from the environment.")
 
     # 3. Load configurations
-    prompt_file_path = Path(__file__).parent.parent / "prompts" / "goggins_agent_2.md"
+    prompt_file_path = Path(__file__).parent.parent / "prompts" / "goggins_agent.md"
     logger.debug(f"Loading prompt configuration from {prompt_file_path}")
     prompt_config = MarkdownPromptLoader.load(prompt_file_path)
 
@@ -54,6 +59,7 @@ def main() -> None:
     logger.debug("Initializing infrastructure dependencies")
     llm_client = OllamaClient(prompt_config=prompt_config, host=ollama_host, model_name=ollama_model)
     tts_client = FishAudioTTSClient(api_key=fish_api_key, voice_id=fish_voice_id, model=fish_model)
+    audio_mixer_client = AudioMixerService()
     db_repo = SQLiteMessageRepository()
     messenger = WhatsAppMessenger()
     contact_repo = JSONContactRepository(file_path="contacts.json")
@@ -61,7 +67,12 @@ def main() -> None:
     # 5. Wire the application
     logger.debug("Wiring MessagingJobService orchestration layer")
     bot_service = MessagingJobService(
-        llm=llm_client, tts=tts_client, messenger=messenger, repo=db_repo, contact_repo=contact_repo
+        llm=llm_client,
+        tts=tts_client,
+        audio_mixer=audio_mixer_client,
+        messenger=messenger,
+        repo=db_repo,
+        contact_repo=contact_repo,
     )
 
     bot_service.run_once()

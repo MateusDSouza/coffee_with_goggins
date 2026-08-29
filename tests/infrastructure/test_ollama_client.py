@@ -46,6 +46,10 @@ class TestOllamaClient:
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": "Say a warm hello to Maksin."},
             ],
+            options={
+                "temperature": 0.8,
+                "top_p": 0.9,
+            },
         )
 
     @patch("src.infrastructure.ollama_client.Client")
